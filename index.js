@@ -20,4 +20,18 @@ res.json(resp)
 
 });
 
+app.get("/categories" ,async(req,res)=>{
+
+await client.connect();
+
+let db = client.db("rohit_db");
+
+let products = db.collection("category");
+
+let resp = await products.find({}).toArray();
+
+res.json(resp)
+
+});
+
 app.listen(7800 , ()=>console.log("Api server start"));
