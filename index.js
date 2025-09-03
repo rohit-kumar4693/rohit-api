@@ -1,10 +1,13 @@
 let express = require("express");
+let cors = require("cors");
 
 let { MongoClient } = require("mongodb");
 
 let client = new MongoClient("mongodb+srv://rk0418813:123%40rohit@cluster0.oo8dtsy.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0");
 
 let app = express();
+
+app.use(cors());
 
 app.get("/products" ,async(req,res)=>{
 
