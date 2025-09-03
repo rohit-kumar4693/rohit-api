@@ -20,18 +20,58 @@ res.json(resp)
 
 });
 
+
+
 app.get("/categories" ,async(req,res)=>{
 
 await client.connect();
 
 let db = client.db("rohit_db");
 
-let products = db.collection("category");
+let categories = db.collection("category");
 
-let resp = await products.find({}).toArray();
+let resp = await categories.aggregate([
+
+    {
+
+        $project : {
+
+            cat_name:1,cat_alias:1,_id:0,id:1
+
+        }
+
+    },
+
+    {
+
+        $lookup : {
+
+            from : "products_1",
+            localField : "id",
+            foreignField : "cat_id",
+            pipeline : [
+                {
+                    $project :{
+                        _id:0,cat_name:0
+                    }
+                }
+            ],
+            as : "prd"
+
+        }
+
+    }
+
+
+]).toArray();
 
 res.json(resp)
 
 });
+
+
+
+
+
 
 app.listen(7800 , ()=>console.log("Api server start"));
