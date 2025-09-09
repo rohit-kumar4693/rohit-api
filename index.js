@@ -9,57 +9,125 @@ let app = express();
 
 app.use(cors());
 
-app.get("/products" ,async(req,res)=>{
+
+
+app.get("/customers" ,async(req,res)=>{
 
 await client.connect();
 
-let db = client.db("rohit_db");
+let db = client.db("sqldemo1");
 
-let products = db.collection("products_1");
+let products = db.collection("customers");
 
-let resp = await products.find({}).toArray();
+let resp = await products.aggregate([
 
-res.json(resp)
-
-});
-
-
-
-app.get("/categories" ,async(req,res)=>{
-
-await client.connect();
-
-let db = client.db("rohit_db");
-
-let categories = db.collection("category");
-
-let resp = await categories.aggregate([
 
     {
 
         $project : {
 
-            cat_name:1,cat_alias:1,_id:0,id:1
+            customerNumber:1 , _id:0 , customerName:1 , country:1
 
+        }
+
+    },
+    {
+
+        $lookup:{
+
+            from:"payments",
+            localField:"customerNumber",
+            foreignField:"customerNumber",
+            as:"payments",
+            pipeline:[
+                {
+                    $project :{
+
+                        _id :0, customerName:0
+                    }
+                }
+                
+            ]
         }
 
     },
 
     {
 
-        $lookup : {
+        $lookup :{
 
-            from : "products_1",
-            localField : "id",
-            foreignField : "cat_id",
-            pipeline : [
-                {
-                    $project :{
-                        _id:0,cat_name:0
-                    }
+            from :"orders",
+            localField:"customerNumber",
+            foreignField:"customerNumber",
+            as:"orders",
+            pipeline:[
+
+            {
+                
+                $project :{
+
+                    _id:0 , customerNumber:0 , requiredData :0 , shippedDate:0 , comments:0
+
                 }
-            ],
-            as : "prd"
+
+            },
+
+            {
+
+                $lookup:{
+
+                    from:"orderdetails",
+                    localField:"orderNumber",
+                    foreignField:"orderNumber",
+                    pipeline:[
+
+                        {
+
+                            $project :{
+
+                                _id:0,productCode:1,quantityOrdered:1
+
+                            }
+
+                        },
+                        {
+
+                            $lookup:{
+
+                                from:"products",
+                                localField:"productCode",
+                                foreignField:"productCode",
+                                as:"productDatails",
+                               
+                                pipeline:[
+
+                                    {
+
+                                        $project:{
+
+                                            _id:0,productName:1,productDescription:1 
+
+                                        }
+
+                                    }
+
+                                ]
+
+                            }
+
+                        }
+
+                    ],
+                    as :"orderDetails"
+
+
+
+                }
+
+            }
+
+
+            ]
 
         }
 
@@ -72,9 +140,19 @@ res.json(resp)
 
 });
 
+app.get("/payments", async(req,res)=>{
 
+    await client.connect();
 
+    let db = client.db("sqldemo1");
 
+    let payments = db.collection("payments");
+
+    let resp = await payments.find({}).toArray();
+
+    res.json(resp);
+
+})
 
 
 app.listen(7800 , ()=>console.log("Api server start"));
